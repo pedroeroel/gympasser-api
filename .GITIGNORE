@@ -1,2 +1,2 @@
 venv
-../app/routes/api/key
+app/routes/api/key
