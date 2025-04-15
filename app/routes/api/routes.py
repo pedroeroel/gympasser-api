@@ -28,16 +28,49 @@ else:
 
 db = firestore.client()
 
+allowed_urls = {
+    r"/*": {
+    'origins':[
+            'https://127.0.0.1:5000',
+            'null'
+            ],
+    'supports_credentials': True,
+    'Access-Control-Allow-Credentials': True
+    }
+}
+
+CORS(api, resources=allowed_urls)
+
 @api.route('/')
 def status():
     return jsonify({'message': 'API is online.'}), 202
 
-@api.route('/user', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def user():
+@api.route('/user/<int:cpf>', methods=['GET', 'POST', 'PUT', 'DELETE'])
+def user(cpf):
     if request.method == 'GET':
 
-        data = request.get_json()
+        if not cpf:
+            return jsonify({'message':'ERROR: CPF not given.'})
+        
+        userList = db.collection('users').stream()
 
-        cpf = data.get('cpf')
+        users = []
 
-        return jsonify('')
+        for item in userList:
+            users.append(item.to_dict())
+
+        userResult = None
+
+        for user in users:
+            userCPF = user['cpf']
+            if cpf == userCPF:
+                userResult = user
+                break
+
+        return jsonify({
+
+            "user":f"{userResult['user']}",
+            "cpf":f"{userResult['cpf']}",
+            "status":f"{userResult['status']}"
+            
+                        }), 200
