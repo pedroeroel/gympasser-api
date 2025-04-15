@@ -111,7 +111,8 @@ def userCPF(cpf):
 
             "user":f"{userResult['user']}",
             "cpf":f"{userResult['cpf']}",
-            "status":f"{userResult['status']}"
+            "status":f"{userResult['status']}",
+            'id': userResult['id']
             
                         }), 200
     
