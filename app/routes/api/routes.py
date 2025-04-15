@@ -49,23 +49,25 @@ def status():
 @api.route('/user', methods=['GET', 'POST'])
 def user():
 
+    userList = db.collection('users').stream()
+    users = []
+
+    for item in userList:
+        users.append(item.to_dict())
+
+    users.sort(key=lambda user: int(user['id']))
+    
+    if request.method == 'GET':
+
+        return jsonify(users), 200
+
+
     data = request.get_json()
     
     if request.method == 'POST':
 
-        userList = db.collection('users').stream()
-
-        users = []
-
-        for user in userList:
-            users.append(user.to_dict())
-
-        userResult = None
-
         newID = 1
 
-        users.sort(key=lambda user: int(user['id']))
-        
         cpf = data.get('cpf')
         newUser = data.get('user')
 
@@ -136,7 +138,7 @@ def userCPF(cpf):
             return jsonify({'message': 'ERROR: No data provided for update.'}), 400
 
         try:
-            user_ref = db.collection('users').document(userResult['id'])
+            user_ref = db.collection('users').document(f'{userResult['id']}')
             user_ref.update(update_data)
             return jsonify({'message': f'User with CPF {cpf} updated successfully!'}), 200
         except Exception as e:
