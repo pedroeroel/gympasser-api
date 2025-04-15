@@ -19,7 +19,6 @@ else:
 
     cred = None
 
-
 if cred:
     firebase_admin.initialize_app(cred)
 
@@ -68,7 +67,7 @@ def user():
 
         newID = 1
 
-        cpf = data.get('cpf')
+        cpf = int(data.get('cpf'))
         newUser = data.get('user')
 
         for user in users:
@@ -76,35 +75,35 @@ def user():
             if cpf == userCPF:
                 return jsonify({'message':'ERROR: CPF already exists!'}), 409
             
-        if users[-1]:
+        if users:
             newID = int(users[-1]['id']) + 1
 
         try:
             register = db.collection("users").document(f"{newID}")
-            register.set({'cpf': cpf, 'id': str(newID), 'status':'inactive', 'user': newUser})
+            register.set({'cpf': cpf, 'id': newID, 'status':'inactive', 'user': newUser})
             return jsonify({'message': 'User created successfully!'}), 201
         except Exception as e:
             return jsonify({'message': f'ERROR! Could not save user: {str(e)}'}), 500
 
 @api.route('/user/<int:cpf>', methods=['GET', 'PUT', 'DELETE'])
 def userCPF(cpf):
-    userList = db.collection('users').stream()
-    users = []
-
-    for item in userList:
-        users.append(item.to_dict())
-    
-    userResult = None
-
-    users.sort(key=lambda user: int(user['id']))
-
-    for user in users:
-        userCPF = user['cpf']
-        if cpf == userCPF:
-            userResult = user
-            break
 
     if request.method == 'GET':
+        userList = db.collection('users').stream()
+        users = []
+
+        for item in userList:
+            users.append(item.to_dict())
+        
+        userResult = None
+
+        users.sort(key=lambda user: int(user['id']))
+
+        for item in users:
+            userCPF = item['cpf']
+            if cpf == userCPF:
+                userResult = item
+                break
 
         if not cpf:
             return jsonify({'message':'ERROR: CPF not given.'})
@@ -119,6 +118,21 @@ def userCPF(cpf):
                         }), 200
     
     elif request.method == 'PUT':
+        userList = db.collection('users').stream()
+        users = []
+
+        for item in userList:
+            users.append(item.to_dict())
+        
+        userResult = None
+
+        users.sort(key=lambda user: int(user['id']))
+
+        for item in users:
+            userCPF = item['cpf']
+            if cpf == userCPF:
+                userResult = item
+                break
         
         data = request.get_json()
         newStatus = data.get('status')
@@ -145,10 +159,26 @@ def userCPF(cpf):
             return jsonify({'message': f'ERROR! Could not update user with CPF {cpf}: {str(e)}'}), 500
 
     elif request.method == 'DELETE':
+        userList = db.collection('users').stream()
+        users = []
+
+        for item in userList:
+            users.append(item.to_dict())
+        
+        userResult = None
+
+        users.sort(key=lambda user: int(user['id']))
+
+        for item in users:
+            userCPF = item['cpf']
+            if cpf == userCPF:
+                userResult = item
+                break
+
         if not userResult:
             return jsonify({'message': f'ERROR: User with CPF {cpf} not found for deletion.'}), 404
         try:
-            user_ref = db.collection('users').document(f'{userResult['id']}')
+            user_ref = db.collection('users').document(f"{userResult['id']}")
             user_ref.delete()
             return jsonify({'message': f'User with CPF {cpf} deleted successfully!'}), 200
         except Exception as e:
