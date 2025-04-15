@@ -33,8 +33,8 @@ allowed_urls = {
             'https://127.0.0.1:5000',
             'null',
             'https://gympasser-api.vercel.app/',
-            'https://gympasser-admin.vercel.app/',
-            'https://gympasser-client.vercel.app/'
+            'https://gympasser-admin.vercel.app',
+            'https://gympasser-client.vercel.app'
             ],
     'supports_credentials': True,
     'Access-Control-Allow-Credentials': True
