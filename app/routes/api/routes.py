@@ -32,7 +32,8 @@ allowed_urls = {
     r"/*": {
     'origins':[
             'https://127.0.0.1:5000',
-            'null'
+            'null',
+            'https://gympasser-api.vercel.app/'
             ],
     'supports_credentials': True,
     'Access-Control-Allow-Credentials': True
@@ -45,27 +46,66 @@ CORS(api, resources=allowed_urls)
 def status():
     return jsonify({'message': 'API is online.'}), 202
 
-@api.route('/user/<int:cpf>', methods=['GET', 'POST', 'PUT', 'DELETE'])
-def user(cpf):
-    if request.method == 'GET':
+@api.route('/user', methods=['GET', 'POST'])
+def user():
 
-        if not cpf:
-            return jsonify({'message':'ERROR: CPF not given.'})
-        
+    data = request.get_json()
+    
+    if request.method == 'POST':
+
         userList = db.collection('users').stream()
 
         users = []
 
-        for item in userList:
-            users.append(item.to_dict())
+        for user in userList:
+            users.append(user.to_dict())
 
         userResult = None
+
+        newID = 1
+
+        users.sort(key=lambda user: int(user['id']))
+        
+        cpf = data.get('cpf')
+        newUser = data.get('user')
 
         for user in users:
             userCPF = user['cpf']
             if cpf == userCPF:
-                userResult = user
-                break
+                return jsonify({'message':'ERROR: CPF already exists!'}), 409
+            
+        if users[-1]:
+            newID = int(users[-1]['id']) + 1
+
+        try:
+            register = db.collection("users").document(f"{newID}")
+            register.set({'cpf': cpf, 'id': str(newID), 'status':'inactive', 'user': newUser})
+            return jsonify({'message': 'User created successfully!'}), 201
+        except Exception as e:
+            return jsonify({'message': f'ERROR! Could not save user: {str(e)}'}), 500
+
+@api.route('/user/<int:cpf>', methods=['GET', 'PUT', 'DELETE'])
+def userCPF(cpf):
+    userList = db.collection('users').stream()
+    users = []
+
+    for item in userList:
+        users.append(item.to_dict())
+    
+    userResult = None
+
+    users.sort(key=lambda user: int(user['id']))
+
+    for user in users:
+        userCPF = user['cpf']
+        if cpf == userCPF:
+            userResult = user
+            break
+
+    if request.method == 'GET':
+
+        if not cpf:
+            return jsonify({'message':'ERROR: CPF not given.'})
 
         return jsonify({
 
@@ -74,3 +114,39 @@ def user(cpf):
             "status":f"{userResult['status']}"
             
                         }), 200
+    
+    elif request.method == 'PUT':
+        
+        data = request.get_json()
+        newStatus = data.get('status')
+        newUser = data.get('user')
+
+        if not userResult:
+            return jsonify({'message': f'ERROR: User with CPF {cpf} not found for update.'}), 404
+
+        update_data = {}
+        if newStatus is not None:
+            update_data['status'] = newStatus
+
+        if newUser is not None:
+            update_data['user'] = newUser
+
+        if not update_data:
+            return jsonify({'message': 'ERROR: No data provided for update.'}), 400
+
+        try:
+            user_ref = db.collection('users').document(userResult['id'])
+            user_ref.update(update_data)
+            return jsonify({'message': f'User with CPF {cpf} updated successfully!'}), 200
+        except Exception as e:
+            return jsonify({'message': f'ERROR! Could not update user with CPF {cpf}: {str(e)}'}), 500
+
+    elif request.method == 'DELETE':
+        if not userResult:
+            return jsonify({'message': f'ERROR: User with CPF {cpf} not found for deletion.'}), 404
+        try:
+            user_ref = db.collection('users').document(userResult['id'])
+            user_ref.delete()
+            return jsonify({'message': f'User with CPF {cpf} deleted successfully!'}), 200
+        except Exception as e:
+            return jsonify({'message': f'ERROR! Could not delete user with CPF {cpf}: {str(e)}'}), 500
