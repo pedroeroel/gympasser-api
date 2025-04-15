@@ -148,7 +148,7 @@ def userCPF(cpf):
         if not userResult:
             return jsonify({'message': f'ERROR: User with CPF {cpf} not found for deletion.'}), 404
         try:
-            user_ref = db.collection('users').document(userResult['id'])
+            user_ref = db.collection('users').document(f'{userResult['id']}')
             user_ref.delete()
             return jsonify({'message': f'User with CPF {cpf} deleted successfully!'}), 200
         except Exception as e:
