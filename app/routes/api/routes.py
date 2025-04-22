@@ -110,7 +110,8 @@ def userCPF(cpf):
         if not cpf:
             return jsonify({'message':'ERROR: CPF not given.'})
 
-        return jsonify({
+        elif userResult:
+            return jsonify({
 
             "user":f"{userResult['user']}",
             "cpf":f"{userResult['cpf']}",
@@ -118,7 +119,11 @@ def userCPF(cpf):
             'id': userResult['id']
             
                         }), 200
-    
+        else:
+            return jsonify({
+                "message": "CPF not found."
+            }), 404
+
     elif request.method == 'PUT':
         userList = db.collection('users').stream()
         users = []
